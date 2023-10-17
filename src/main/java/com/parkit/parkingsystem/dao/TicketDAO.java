@@ -12,8 +12,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.util.Date;
 
 public class TicketDAO {
+    // fermer les statements avant
 
     private static final Logger logger = LogManager.getLogger("TicketDAO");
 
@@ -87,6 +89,24 @@ public class TicketDAO {
         return false;
     }
 
+    // for TI only
+    public boolean updateIntimeTicketForTI(Ticket ticket, Date date) {
+        Connection con = null;
+        try {
+            con = dataBaseConfig.getConnection();
+            PreparedStatement ps = con.prepareStatement(DBConstants.UPDATE_INTIME_TICKET_FOR_TI_ONLY);
+            ps.setTimestamp(1, new Timestamp(date.getTime()));
+            ps.setInt(2, ticket.getId());
+            ps.execute();
+            return true;
+        } catch (Exception ex) {
+            logger.error("Error saving ticket info", ex);
+        } finally {
+            dataBaseConfig.closeConnection(con);
+        }
+        return false;
+    }
+
     public int getNbTicket(Ticket ticket) {
         Connection con = null;
         try {
@@ -95,8 +115,10 @@ public class TicketDAO {
             ps.setString(1, ticket.getVehicleRegNumber());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getInt(0);
+                return rs.getInt(1);
             }
+            dataBaseConfig.closeResultSet(rs);
+            dataBaseConfig.closePreparedStatement(ps);
         } catch (Exception ex) {
             logger.error("Error getting the number of ticket from that vehicle regnumber", ex);
         } finally {
@@ -104,4 +126,25 @@ public class TicketDAO {
         }
         return 0;
     }
+
+    public boolean isAlreadyInsideTheParking(String vehicleRegNumber) {
+        Connection con = null;
+        try {
+            con = dataBaseConfig.getConnection();
+            PreparedStatement ps = con.prepareStatement(DBConstants.ALREADY_INSIDE_THE_PARKING);
+            ps.setString(1, vehicleRegNumber);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) == 1;
+            }
+            dataBaseConfig.closeResultSet(rs);
+            dataBaseConfig.closePreparedStatement(ps);
+        } catch (Exception ex) {
+            logger.error("Error while trying to see if that vehicule is already inside the parking", ex);
+        } finally {
+            dataBaseConfig.closeConnection(con);
+        }
+        return false;
+    }
+
 }

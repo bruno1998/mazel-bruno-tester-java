@@ -1,6 +1,7 @@
 package com.parkit.parkingsystem.service;
 
 import com.parkit.parkingsystem.constants.Fare;
+import com.parkit.parkingsystem.constants.ParkingType;
 import com.parkit.parkingsystem.model.Ticket;
 
 public class FareCalculatorService {
@@ -24,31 +25,27 @@ public class FareCalculatorService {
 
         switch (ticket.getParkingSpot().getParkingType()) {
             case CAR: {
-                if (freeParkingUnderHalfAnHour(duration)) {
-                    ticket.setPrice(0);
-                } else {
-                    if (discount) {
-                        ticket.setPrice(duration * Fare.CAR_RATE_PER_HOUR * 0.95);
-                    } else {
-                        ticket.setPrice(duration * Fare.CAR_RATE_PER_HOUR);
-                    }
-                }
+                setPriceOnTicket(ticket, Fare.CAR_RATE_PER_HOUR, duration, discount);
                 break;
             }
             case BIKE: {
-                if (freeParkingUnderHalfAnHour(duration)) {
-                    ticket.setPrice(0);
-                } else {
-                    if (discount) {
-                        ticket.setPrice(duration * Fare.BIKE_RATE_PER_HOUR * 0.95);
-                    } else {
-                        ticket.setPrice(duration * Fare.BIKE_RATE_PER_HOUR);
-                    }
-                }
+                setPriceOnTicket(ticket, Fare.BIKE_RATE_PER_HOUR, duration, discount);
                 break;
             }
             default:
                 throw new IllegalArgumentException("Unkown Parking Type");
+        }
+    }
+
+    private void setPriceOnTicket(Ticket ticket, double fare, double duration, boolean discount) {
+        if (freeParkingUnderHalfAnHour(duration)) {
+            ticket.setPrice(0);
+        } else {
+            if (discount) {
+                ticket.setPrice(duration * fare * 0.95);
+            } else {
+                ticket.setPrice(duration * fare);
+            }
         }
     }
 

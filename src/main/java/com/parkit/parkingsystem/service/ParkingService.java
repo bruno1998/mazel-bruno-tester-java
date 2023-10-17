@@ -33,6 +33,11 @@ public class ParkingService {
             if (parkingSpot != null && parkingSpot.getId() > 0) {
                 String vehicleRegNumber = getVehichleRegNumber();
 
+                if (ticketDAO.isAlreadyInsideTheParking(vehicleRegNumber)) {
+                    throw new Exception(
+                            "the vehicule with the regnumber : " + vehicleRegNumber + " is already inside the parking");
+                }
+
                 parkingSpot.setAvailable(false);
                 parkingSpotDAO.updateParking(parkingSpot);// allot this parking space and mark it's availability as
                                                           // false
@@ -47,7 +52,7 @@ public class ParkingService {
                 ticket.setInTime(inTime);
                 ticket.setOutTime(null);
                 ticketDAO.saveTicket(ticket);
-                if (ticketDAO.getNbTicket(ticket) > 1) {
+                if (ticketDAO.getNbTicket(ticket) > 0) {
                     System.out.println(
                             "Heureux de vous revoir ! En tant qu’utilisateur régulier de notre parking, vous allez obtenir une remise de 5%");
                 }
@@ -106,11 +111,16 @@ public class ParkingService {
     public void processExitingVehicle() {
         try {
             String vehicleRegNumber = getVehichleRegNumber();
+            if (!ticketDAO.isAlreadyInsideTheParking(vehicleRegNumber)) {
+                throw new Exception("the vehicule with the regnumber : " + vehicleRegNumber
+                        + " that is trying to leave never entered the parking");
+            }
+
             Ticket ticket = ticketDAO.getTicket(vehicleRegNumber);
             Date outTime = new Date();
             ticket.setOutTime(outTime);
 
-            if (ticketDAO.getNbTicket(ticket) > 1) {
+            if (ticketDAO.getNbTicket(ticket) > 0) {
                 fareCalculatorService.calculateFare(ticket, true);
             } else {
                 fareCalculatorService.calculateFare(ticket, false);
