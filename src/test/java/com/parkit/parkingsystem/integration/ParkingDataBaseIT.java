@@ -34,6 +34,7 @@ public class ParkingDataBaseIT {
     private static TicketDAO ticketDAO;
     private static DataBasePrepareService dataBasePrepareService;
 
+    ParkingService parkingService;
     @Mock
     private static InputReaderUtil inputReaderUtil;
 
@@ -44,13 +45,14 @@ public class ParkingDataBaseIT {
         ticketDAO = new TicketDAO();
         ticketDAO.dataBaseConfig = dataBaseTestConfig;
         dataBasePrepareService = new DataBasePrepareService();
+
     }
 
     @BeforeEach
     private void setUpPerTest() throws Exception {
         when(inputReaderUtil.readSelection()).thenReturn(1);
         when(inputReaderUtil.readVehicleRegistrationNumber()).thenReturn("ABCDEF");
-
+        parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
         dataBasePrepareService.clearDataBaseEntries();
     }
 
@@ -61,7 +63,7 @@ public class ParkingDataBaseIT {
 
     @Test
     public void testParkingACar() throws Exception {
-        ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
+        assertNotNull(parkingService);
 
         parkingService.processIncomingVehicle();
         assertNotEquals(parkingSpotDAO.getNextAvailableSlot(ParkingType.CAR), 1);
@@ -73,7 +75,6 @@ public class ParkingDataBaseIT {
     public void testParkingLotExit() throws Exception {
         testParkingACar();
 
-        ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
         parkingService.processExitingVehicle();
         assertNotNull(ticketDAO.getTicket("ABCDEF").getOutTime());
     }
@@ -81,8 +82,11 @@ public class ParkingDataBaseIT {
     @Test
     public void testParkingLotExitRecurringUser() throws Exception {
 
-        ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
-        testParkingLotExit();
+        parkingService.processIncomingVehicle();
+        Ticket tmp = ticketDAO.getTicket("ABCDEF");
+        Date date0 = new Date(System.currentTimeMillis() - (2 * 60 * 60 * 1000));
+        ticketDAO.updateIntimeTicketForTI(tmp, date0);
+        parkingService.processExitingVehicle();
 
         parkingService.processIncomingVehicle();
         Ticket ticketTmp = ticketDAO.getTicket("ABCDEF");

@@ -17,6 +17,7 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -217,6 +218,25 @@ public class ParkingServiceTest {
         ParkingSpot parkingSpot = parkingService.getNextParkingNumberIfAvailable();
         assertNull(parkingSpot);
 
+    }
+
+    @Test
+    public void testAlreadyInside() {
+
+        try {
+            when(inputReaderUtil.readVehicleRegistrationNumber()).thenReturn("ABCDEF");
+            parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to set up test mock objects");
+        }
+
+        when(parkingSpotDAO.getNextAvailableSlot(any())).thenReturn(1);
+        when(inputReaderUtil.readSelection()).thenReturn(1);
+        when(ticketDAO.isAlreadyInsideTheParking(any(String.class))).thenReturn(true);
+
+        parkingService.processIncomingVehicle();
+        assertTrue(ticketDAO.isAlreadyInsideTheParking("ABCDEF"));
     }
 
 }
